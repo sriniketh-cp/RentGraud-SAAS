@@ -400,6 +400,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     saveBtn.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
                     saveBtn.disabled = true;
 
+                    // Insert "View All Reports" link below save button
+                    if (!document.getElementById('view_reports_btn')) {
+                        const viewBtn = document.createElement('a');
+                        viewBtn.id = 'view_reports_btn';
+                        viewBtn.href = 'reports.html';
+                        viewBtn.className = 'block w-full mt-2 text-center text-sm text-blue-600 font-semibold underline underline-offset-2 hover:text-blue-800 transition-colors';
+                        viewBtn.textContent = '📂 View All My Reports →';
+                        saveBtn.parentNode.insertBefore(viewBtn, saveBtn.nextSibling);
+                    }
+
                     if (shareBtn) shareBtn.classList.remove('hidden');
                 },
                 (error) => {
@@ -418,21 +428,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Please save the report first.");
                 return;
             }
+
+            const shareText =
+                `📋 RentGuard Inspection Report\n` +
+                `🗒️ Damage: ${savedRecordData.notes || 'No notes'}\n` +
+                `📍 GPS: ${savedRecordData.latitude}, ${savedRecordData.longitude}\n` +
+                `🕐 Recorded: ${savedRecordData.timestamp}`;
+
             if (navigator.share) {
                 try {
-                    await navigator.share({
-                        title: 'RentGuard Inspection Update',
-                        text: `Tenant Inspection Note:\n"${savedRecordData.notes}"\n\nRecorded at GPS: ${savedRecordData.latitude}, ${savedRecordData.longitude}\nTimestamp: ${savedRecordData.timestamp}`,
-                        url: `https://rentguard.in/report/${savedRecordData.id}`
-                    });
+                    // Attempt to share the annotated photo as an actual image file
+                    const response = await fetch(savedRecordData.image);
+                    const blob = await response.blob();
+                    const file = new File([blob], `RentGuard_Report_${savedRecordData.id}.jpg`, { type: 'image/jpeg' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ title: 'RentGuard Inspection Report', text: shareText, files: [file] });
+                    } else {
+                        // Fallback: share text only (no broken URL)
+                        await navigator.share({ title: 'RentGuard Inspection Report', text: shareText });
+                    }
                     console.log('Successfully shared report');
                 } catch (error) {
-                    console.error('Error sharing report:', error);
+                    if (error.name !== 'AbortError') {
+                        console.error('Error sharing report:', error);
+                    }
                 }
             } else {
-                alert("Native sharing is not supported on this device. Copying details to clipboard instead.");
-                const fallbackText = `Damage: ${savedRecordData.notes} | Location: ${savedRecordData.latitude}, ${savedRecordData.longitude}`;
-                navigator.clipboard.writeText(fallbackText);
+                // Clipboard fallback
+                try {
+                    await navigator.clipboard.writeText(shareText);
+                    alert('📋 Report details copied to clipboard! You can paste and send it.');
+                } catch {
+                    alert(shareText);
+                }
             }
         });
     }
