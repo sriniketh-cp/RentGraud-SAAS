@@ -17,9 +17,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
    
+    const cameraOverlay = document.getElementById('camera_overlay');
+    const closeCameraBtn = document.getElementById('close_camera_btn');
+
+    // Helper: stop all camera tracks and hide overlay
+    function closeCamera() {
+        const video = document.getElementById('video');
+        if (video && video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+        }
+        if (cameraOverlay) cameraOverlay.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    // "Start Inspection" → open overlay + start camera
     const inspectionBtns = document.querySelectorAll('.inspection_button');
     inspectionBtns.forEach(inspectionBtn => {
         inspectionBtn.addEventListener('click', async () => {
+            if (!cameraOverlay) return;
             const video = document.getElementById('video');
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -27,21 +43,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     audio: false
                 });
                 video.srcObject = stream;
+                cameraOverlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // prevent background scroll
             } catch (error) {
                 console.error("Camera access denied:", error);
-                alert("Could not access the camera.");
+                alert("Could not access the camera. Please allow camera permissions and try again.");
             }
         });
     });
 
+    // "×" close button → stop camera & close overlay
+    if (closeCameraBtn) {
+        closeCameraBtn.addEventListener('click', closeCamera);
+    }
+
+    // Shutter / Capture button → grab frame → go to annotation page
     const captureBtn = document.getElementById('capture_button');
     if (captureBtn) {
         captureBtn.addEventListener('click', () => {
             const video = document.getElementById('video');
             const canvas = document.getElementById('hidden_canvas');
-            
+
             if (!video || !video.srcObject) {
-                alert("Please start the inspection to turn on the camera first.");
+                alert("Camera is not active. Please start the inspection first.");
                 return;
             }
 
@@ -49,16 +73,12 @@ document.addEventListener('DOMContentLoaded', () => {
             canvas.width = video.videoWidth || 640;
             canvas.height = video.videoHeight || 480;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
+
             const photoData = canvas.toDataURL('image/jpeg', 0.8);
             sessionStorage.setItem('temp_photo', photoData);
-            
-            // Stop camera stream before navigating away
-            const stream = video.srcObject;
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
 
+            // Stop stream before navigating
+            closeCamera();
             window.location.href = 'camera.html';
         });
     }
