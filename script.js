@@ -1,4 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Mobile hamburger menu toggle
+    const mobileMenuBtn = document.getElementById('mobile_menu_btn');
+    const mobileMenu = document.getElementById('mobile_menu');
+    
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // Close menu when clicking on a link
+        const mobileMenuLinks = mobileMenu.querySelectorAll('a, button');
+        mobileMenuLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+    }
    
     const inspectionBtn = document.getElementById('inspection_button');
     if (inspectionBtn) {
