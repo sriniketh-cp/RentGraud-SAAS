@@ -83,16 +83,215 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-   
-    const previewImg = document.getElementById('photo_preview');
-    if (previewImg) {
+    // ── Canvas Annotation (camera.html) ─────────────────────────────────────
+    const annotationCanvas = document.getElementById('annotation_canvas');
+    if (annotationCanvas) {
+        const ctx = annotationCanvas.getContext('2d');
+        let currentTool = 'draw';   // 'draw' | 'circle' | 'arrow'
+        let currentColor = '#ef4444';
+        let strokeSize = 4;
+        let isDrawing = false;
+        let startX = 0, startY = 0;
+        let previewBaseState = null; // snapshot used for live shape preview
+        const undoStack = [];        // stack of ImageData before each action
+        const MAX_UNDO = 20;
+        let baseImage = null;        // original captured image (for Clear)
+
+        // ── Load image from sessionStorage onto canvas ──
         const tempPhotoData = sessionStorage.getItem('temp_photo');
         if (tempPhotoData) {
-            previewImg.src = tempPhotoData;
+            baseImage = new Image();
+            baseImage.onload = () => {
+                annotationCanvas.width  = baseImage.naturalWidth;
+                annotationCanvas.height = baseImage.naturalHeight;
+                ctx.drawImage(baseImage, 0, 0);
+            };
+            baseImage.src = tempPhotoData;
         } else {
-            alert("No photo found! Redirecting to camera.");
+            alert('No photo found! Redirecting to camera.');
             window.location.href = 'index.html';
         }
+
+        // ── Helpers ──────────────────────────────────────
+        function saveUndo(snapshot) {
+            undoStack.push(snapshot || ctx.getImageData(0, 0, annotationCanvas.width, annotationCanvas.height));
+            if (undoStack.length > MAX_UNDO) undoStack.shift();
+        }
+
+        /** Scale pointer position from CSS pixels → canvas pixels */
+        function getPos(e) {
+            const rect = annotationCanvas.getBoundingClientRect();
+            const scaleX = annotationCanvas.width  / rect.width;
+            const scaleY = annotationCanvas.height / rect.height;
+            const src = e.touches ? e.touches[0] : e;
+            return {
+                x: (src.clientX - rect.left) * scaleX,
+                y: (src.clientY - rect.top)  * scaleY
+            };
+        }
+
+        function applyStyle() {
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth   = strokeSize;
+            ctx.lineCap     = 'round';
+            ctx.lineJoin    = 'round';
+            ctx.shadowColor = 'rgba(0,0,0,0.35)';
+            ctx.shadowBlur  = 3;
+        }
+
+        function drawEllipse(x1, y1, x2, y2) {
+            const rx = Math.abs(x2 - x1) / 2 || 1;
+            const ry = Math.abs(y2 - y1) / 2 || 1;
+            const cx = (x1 + x2) / 2;
+            const cy = (y1 + y2) / 2;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function drawArrow(x1, y1, x2, y2) {
+            const angle   = Math.atan2(y2 - y1, x2 - x1);
+            const headLen = Math.max(24, strokeSize * 5);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.stroke();
+        }
+
+        // ── Tool selection ────────────────────────────────
+        const INACTIVE_BTN = ['border-gray-600', 'text-gray-300'];
+        const ACTIVE_BTN   = ['bg-blue-800', 'text-white', 'border-blue-800'];
+
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                // Remove active Tailwind classes, restore inactive ones
+                btn.classList.remove(...ACTIVE_BTN);
+                btn.classList.add(...INACTIVE_BTN);
+            });
+            const activeBtn = document.getElementById(`tool_${tool}`);
+            if (activeBtn) {
+                activeBtn.classList.remove(...INACTIVE_BTN);
+                activeBtn.classList.add(...ACTIVE_BTN);
+            }
+        }
+        document.getElementById('tool_draw')  ?.addEventListener('click', () => setTool('draw'));
+        document.getElementById('tool_circle')?.addEventListener('click', () => setTool('circle'));
+        document.getElementById('tool_arrow') ?.addEventListener('click', () => setTool('arrow'));
+
+        // ── Color swatches ────────────────────────────────
+        // Active swatch gets: scale-125 ring-2 ring-{color} ring-offset-2 ring-offset-slate-900
+        // We store the ring color class dynamically using the data-color value mapped to a Tailwind class.
+        const SWATCH_ACTIVE   = ['scale-125', 'ring-2', 'ring-offset-2', 'ring-offset-slate-900'];
+        const SWATCH_INACTIVE = ['scale-100'];
+        // Map hex color to the closest Tailwind ring-* class
+        const ringClassMap = {
+            '#ef4444': 'ring-red-500',
+            '#facc15': 'ring-yellow-400',
+            '#22c55e': 'ring-green-500',
+            '#60a5fa': 'ring-blue-400',
+            '#ffffff': 'ring-white',
+        };
+
+        let activeSwatch = document.querySelector('.color-swatch.scale-125');
+        document.querySelectorAll('.color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                // Deactivate old swatch
+                if (activeSwatch) {
+                    const oldRing = ringClassMap[activeSwatch.dataset.color];
+                    activeSwatch.classList.remove(...SWATCH_ACTIVE, oldRing);
+                    activeSwatch.classList.add('scale-100');
+                }
+                // Activate new swatch
+                currentColor = swatch.dataset.color;
+                const newRing = ringClassMap[currentColor] || 'ring-white';
+                swatch.classList.remove('scale-100');
+                swatch.classList.add(...SWATCH_ACTIVE, newRing);
+                activeSwatch = swatch;
+            });
+        });
+
+        // ── Stroke size ───────────────────────────────────
+        const strokeSlider = document.getElementById('stroke_size');
+        const strokeLabel  = document.getElementById('stroke_size_label');
+        strokeSlider?.addEventListener('input', (e) => {
+            strokeSize = parseInt(e.target.value);
+            if (strokeLabel) strokeLabel.textContent = strokeSize;
+        });
+
+        // ── Undo ──────────────────────────────────────────
+        document.getElementById('undo_btn')?.addEventListener('click', () => {
+            if (undoStack.length > 0) {
+                ctx.putImageData(undoStack.pop(), 0, 0);
+            }
+        });
+
+        // ── Clear ─────────────────────────────────────────
+        document.getElementById('clear_btn')?.addEventListener('click', () => {
+            if (!baseImage) return;
+            if (confirm('Clear all annotations and restore the original photo?')) {
+                undoStack.length = 0;
+                ctx.clearRect(0, 0, annotationCanvas.width, annotationCanvas.height);
+                ctx.drawImage(baseImage, 0, 0);
+            }
+        });
+
+        // ── Pointer event handlers ────────────────────────
+        function onStart(e) {
+            e.preventDefault();
+            const { x, y } = getPos(e);
+            startX = x;
+            startY = y;
+            isDrawing = true;
+
+            // Save canvas state before this stroke for undo
+            const snapshot = ctx.getImageData(0, 0, annotationCanvas.width, annotationCanvas.height);
+            saveUndo(snapshot);
+            previewBaseState = snapshot; // reused during live preview of circle/arrow
+
+            applyStyle();
+            if (currentTool === 'draw') {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            }
+        }
+
+        function onMove(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const { x, y } = getPos(e);
+
+            if (currentTool === 'draw') {
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            } else {
+                // Restore pre-drag snapshot so each frame draws a clean preview
+                ctx.putImageData(previewBaseState, 0, 0);
+                applyStyle();
+                if (currentTool === 'circle') drawEllipse(startX, startY, x, y);
+                else if (currentTool === 'arrow') drawArrow(startX, startY, x, y);
+            }
+        }
+
+        function onEnd(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            isDrawing = false;
+        }
+
+        // Mouse
+        annotationCanvas.addEventListener('mousedown',  onStart);
+        annotationCanvas.addEventListener('mousemove',  onMove);
+        annotationCanvas.addEventListener('mouseup',    onEnd);
+        annotationCanvas.addEventListener('mouseleave', onEnd);
+
+        // Touch (passive:false so we can preventDefault and block scroll)
+        annotationCanvas.addEventListener('touchstart', onStart, { passive: false });
+        annotationCanvas.addEventListener('touchmove',  onMove,  { passive: false });
+        annotationCanvas.addEventListener('touchend',   onEnd,   { passive: false });
     }
 
     const micBtn = document.getElementById('micBtn');
@@ -158,9 +357,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
+                        // Use the annotated canvas export; fall back to raw session photo
+                        const annotCanvas = document.getElementById('annotation_canvas');
+                        const annotatedImage = annotCanvas
+                            ? annotCanvas.toDataURL('image/jpeg', 0.92)
+                            : sessionStorage.getItem('temp_photo');
+
                     savedRecordData = {
                         id: Date.now(),
-                        image: sessionStorage.getItem('temp_photo'),
+                        image: annotatedImage,
                         notes: damageNotes ? damageNotes.value : "",
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude,

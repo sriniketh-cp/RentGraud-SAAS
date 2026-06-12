@@ -2,56 +2,129 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="initial-width=device-width,initial-scale=1.0">
-     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-     
-      <script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentGuard | Annotate Damage</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#1e40af', // Blue 800
-                        secondary: '#3b82f6', // Blue 500
+                        primary: '#1e40af',
+                        secondary: '#3b82f6',
                     }
                 }
             }
         }
     </script>
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </head>
-<body>
-<div class="max-w-md mx-auto mt-8 p-4 bg-white rounded-lg shadow-md border">
-    <h2 class="text-xl font-bold mb-4">Review & Annotate</h2>
-    
-    <img id="photo_preview" alt="Captured Photo" class="w-full rounded-lg mb-4 border" />
-    
-    <label for="damageNotes" class="block text-sm font-bold text-gray-700 mb-2">
-        Damage Description
-    </label>
-    <div class="relative mb-4">
-        <textarea 
-            id="damageNotes" 
-            rows="3" 
-            class="w-full border rounded-lg p-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-            placeholder="Tap the mic to describe the damage..."
-        ></textarea>
-        
-        <button 
-            id="micBtn" 
-            class="absolute bottom-3 right-3 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-            title="Dictate Notes"
-        >
-            🎙️
+<body class="min-h-screen flex flex-col text-white bg-slate-900">
+
+    <!-- ── Header ─────────────────────────────────────── -->
+    <header class="flex items-center gap-3 px-4 py-3 bg-gray-900 border-b border-gray-700 shrink-0">
+        <a href="index.html" id="back_btn" class="text-gray-400 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-700">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <div class="flex-1 min-w-0">
+            <h1 class="text-white font-bold text-base leading-tight">Annotate Damage</h1>
+            <p class="text-gray-400 text-xs">Draw directly on the photo to mark pre-existing damage</p>
+        </div>
+        <button id="undo_btn"
+            class="text-gray-300 hover:text-white px-3 py-1.5 rounded-lg border border-gray-600 hover:border-gray-400 text-xs flex items-center gap-1.5 transition-all"
+            title="Undo last action">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Undo</span>
+        </button>
+        <button id="clear_btn"
+            class="text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg border border-red-900 hover:border-red-600 text-xs flex items-center gap-1.5 transition-all"
+            title="Clear all annotations">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Clear</span>
+        </button>
+    </header>
+
+    <!-- ── Canvas Area ─────────────────────────────────── -->
+    <div class="flex-1 overflow-auto bg-gray-950 flex items-center justify-center p-3 min-h-0">
+        <canvas id="annotation_canvas"
+            class="block max-w-full max-h-[55vh] rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.6)] cursor-crosshair [touch-action:none]"
+        ></canvas>
+    </div>
+
+    <!-- ── Drawing Toolbar ─────────────────────────────── -->
+    <div class="bg-gray-900 border-t border-gray-700 px-4 py-3 shrink-0">
+        <div class="flex items-center gap-2 overflow-x-auto pb-1">
+
+            <!-- Tool buttons -->
+            <!-- Draw is active by default: bg-blue-800 text-white border-blue-800 -->
+            <button id="tool_draw"
+                class="tool-btn flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm whitespace-nowrap transition-all duration-150 bg-blue-800 text-white border-blue-800"
+                title="Freehand pen">
+                <i class="fa-solid fa-pen"></i> Draw
+            </button>
+            <button id="tool_circle"
+                class="tool-btn flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-600 text-gray-300 text-sm whitespace-nowrap transition-all duration-150"
+                title="Circle / ellipse">
+                <i class="fa-regular fa-circle"></i> Circle
+            </button>
+            <button id="tool_arrow"
+                class="tool-btn flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-600 text-gray-300 text-sm whitespace-nowrap transition-all duration-150"
+                title="Arrow">
+                <i class="fa-solid fa-arrow-right-long"></i> Arrow
+            </button>
+
+            <div class="h-7 w-px bg-gray-700 mx-1 shrink-0"></div>
+
+            <!-- Color swatches -->
+            <div class="flex items-center gap-2 shrink-0">
+                <!-- scale-125 ring-2 ring-offset-2 ring-offset-slate-900 mark the active swatch -->
+                <button data-color="#ef4444" class="color-swatch w-7 h-7 rounded-full bg-red-500 border-2 border-red-300 transition-transform duration-100 scale-125 ring-2 ring-red-500 ring-offset-2 ring-offset-slate-900" title="Red"></button>
+                <button data-color="#facc15" class="color-swatch w-7 h-7 rounded-full bg-yellow-400 border-2 border-yellow-200 transition-transform duration-100" title="Yellow"></button>
+                <button data-color="#22c55e" class="color-swatch w-7 h-7 rounded-full bg-green-500 border-2 border-green-300 transition-transform duration-100" title="Green"></button>
+                <button data-color="#60a5fa" class="color-swatch w-7 h-7 rounded-full bg-blue-400 border-2 border-blue-200 transition-transform duration-100" title="Blue"></button>
+                <button data-color="#ffffff" class="color-swatch w-7 h-7 rounded-full bg-white border-2 border-gray-400 transition-transform duration-100" title="White"></button>
+            </div>
+
+            <div class="h-7 w-px bg-gray-700 mx-1 shrink-0"></div>
+
+            <!-- Stroke size slider -->
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="text-gray-400 text-xs whitespace-nowrap">Size</span>
+                <input id="stroke_size" type="range" min="2" max="18" value="4"
+                    class="w-20 accent-blue-500 cursor-pointer">
+                <span id="stroke_size_label" class="text-gray-400 text-xs w-4">4</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Notes + Save ────────────────────────────────── -->
+    <div class="bg-white border-t border-gray-200 px-4 py-4 shrink-0">
+        <label for="damageNotes" class="block text-sm font-bold text-gray-700 mb-1.5">
+            Damage Description
+        </label>
+        <div class="relative mb-3">
+            <textarea
+                id="damageNotes"
+                rows="2"
+                class="w-full border border-gray-300 rounded-lg p-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-sm resize-none"
+                placeholder="Tap the mic or type to describe the damage..."
+            ></textarea>
+            <button id="micBtn"
+                class="absolute bottom-3 right-3 p-1.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-base"
+                title="Voice dictation">🎙️</button>
+        </div>
+        <p id="micStatus" class="text-xs text-red-500 font-bold mb-3 hidden animate-pulse">🔴 Listening... Speak now.</p>
+
+        <button id="save_photo_button"
+            class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all">
+            📍 Save Annotated Photo + Location + Notes
+        </button>
+        <button id="shareBtn"
+            class="hidden w-full mt-3 border-2 border-blue-600 text-blue-600 bg-white py-3 rounded-xl font-bold shadow hover:bg-blue-50 active:scale-95 transition-all">
+            📤 Share with Landlord
         </button>
     </div>
-    <p id="micStatus" class="text-xs text-red-500 font-bold mb-4 hidden animate-pulse">Listening... Speak now.</p>
-    
-    <button id="save_photo_button" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-blue-700">
-        Save Photo + Location + Notes
-    </button>
-    <button id="shareBtn" class="hidden w-full mt-4 border-2 border-blue-600 text-blue-600 bg-white py-3 rounded-lg font-bold shadow hover:bg-blue-50 transition">
-        📤 Share with Landlord
-    </button>
-</div>
+
 </body>
 </html>
