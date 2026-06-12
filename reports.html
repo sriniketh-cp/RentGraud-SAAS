@@ -14,6 +14,15 @@
                     colors: {
                         primary: '#1e40af',
                         secondary: '#3b82f6',
+                    },
+                    keyframes: {
+                        slideUp: {
+                            from: { opacity: '0', transform: 'translateY(24px)' },
+                            to:   { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.4s ease both',
                     }
                 }
             }
@@ -22,56 +31,13 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
-
-        .report-card {
-            animation: slideUp 0.4s ease both;
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(24px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .report-card:nth-child(1) { animation-delay: 0.05s; }
-        .report-card:nth-child(2) { animation-delay: 0.1s; }
-        .report-card:nth-child(3) { animation-delay: 0.15s; }
-        .report-card:nth-child(4) { animation-delay: 0.2s; }
-        .report-card:nth-child(5) { animation-delay: 0.25s; }
-        .report-card:nth-child(6) { animation-delay: 0.3s; }
-
-        /* Lightbox */
-        #lightbox {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: rgba(0,0,0,0.92);
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-        #lightbox.open { display: flex; }
-        #lightbox img {
-            max-width: 92vw;
-            max-height: 88vh;
-            border-radius: 12px;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.8);
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            padding: 3px 10px;
-            border-radius: 999px;
-        }
     </style>
 </head>
 <body class="bg-slate-950 min-h-screen text-gray-100">
 
-    <!-- Header -->
+    
     <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-700/60 shadow-lg">
-        <div class="max-w-6xl mx-auto px-4 h-15 flex items-center gap-3 py-3">
+        <div class="max-w-6xl mx-auto px-4 flex items-center gap-3 py-3">
             <a href="index.html" id="back_to_home"
                class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white transition-all border border-slate-600">
                 <i class="fa-solid fa-arrow-left text-sm"></i>
@@ -80,7 +46,7 @@
                 <h1 class="text-white font-bold text-lg leading-tight">My Inspection Reports</h1>
                 <p class="text-gray-400 text-xs" id="report_count_label">Loading reports…</p>
             </div>
-            <!-- Clear all -->
+      
             <button id="clear_all_btn"
                 class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-800 text-red-400 hover:bg-red-900/30 hover:text-red-300 text-xs font-semibold transition-all">
                 <i class="fa-solid fa-trash"></i> Clear All
@@ -90,7 +56,7 @@
 
     <main class="max-w-6xl mx-auto px-4 py-8">
 
-        <!-- Empty state -->
+     
         <div id="empty_state" class="hidden flex-col items-center justify-center py-28 text-center">
             <div class="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center mb-6 border border-slate-700">
                 <i class="fa-solid fa-camera-slash text-4xl text-slate-500"></i>
@@ -103,23 +69,28 @@
             </a>
         </div>
 
-        <!-- Reports Grid -->
+      
         <div id="reports_grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Cards injected by JS -->
+           
         </div>
 
     </main>
 
-    <!-- Lightbox -->
-    <div id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
+   
+    <div id="lightbox"
+         role="dialog"
+         aria-modal="true"
+         aria-label="Photo viewer"
+         class="hidden fixed inset-0 z-[9999] bg-black/[0.92] backdrop-blur-[4px] items-center justify-center">
         <button id="lightbox_close"
             class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white text-xl flex items-center justify-center transition-all z-10">
             <i class="fa-solid fa-xmark"></i>
         </button>
-        <img id="lightbox_img" src="" alt="Full size inspection photo">
+        <img id="lightbox_img" src="" alt="Full size inspection photo"
+             class="max-w-[92vw] max-h-[88vh] rounded-xl shadow-[0_24px_80px_rgba(0,0,0,0.8)]">
     </div>
 
-    <!-- Delete confirm modal -->
+   
     <div id="delete_modal" class="hidden fixed inset-0 z-[9998] bg-black/70 flex items-center justify-center backdrop-blur-sm">
         <div class="bg-slate-800 border border-slate-600 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl">
             <div class="w-12 h-12 rounded-full bg-red-900/40 flex items-center justify-center mb-4 border border-red-800">
@@ -165,6 +136,16 @@
 
     let pendingDeleteId = null;
 
+    
+    const DELAY_CLASSES = [
+        '[animation-delay:0.05s]',
+        '[animation-delay:0.1s]',
+        '[animation-delay:0.15s]',
+        '[animation-delay:0.2s]',
+        '[animation-delay:0.25s]',
+        '[animation-delay:0.3s]',
+    ];
+
     function renderReports() {
         const reports = loadReports();
         const grid = document.getElementById('reports_grid');
@@ -191,12 +172,14 @@
         clearAllBtn.classList.add('flex');
         countLabel.textContent = `${reports.length} report${reports.length !== 1 ? 's' : ''} saved on this device`;
 
-        // Show newest first
+        
         const sorted = [...reports].reverse();
 
         sorted.forEach((report, idx) => {
             const card = document.createElement('div');
-            card.className = 'report-card bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl hover:shadow-blue-900/20 hover:border-slate-500/60 transition-all duration-300 group flex flex-col';
+           
+            const delayStyle = `animation-delay: ${idx * 0.05}s`;
+            card.className = 'animate-slide-up bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl hover:shadow-blue-900/20 hover:border-slate-500/60 transition-all duration-300 group flex flex-col';
             card.style.animationDelay = `${idx * 0.05}s`;
 
             const hasNotes = report.notes && report.notes.trim() !== '';
@@ -219,7 +202,7 @@
                     </div>
                     <!-- Timestamp badge on image -->
                     <div class="absolute bottom-2 left-2">
-                        <span class="badge bg-black/60 text-gray-200 backdrop-blur-sm border border-white/10">
+                        <span class="inline-flex items-center gap-[5px] text-[0.72rem] font-semibold px-[10px] py-[3px] rounded-full bg-black/60 text-gray-200 backdrop-blur-sm border border-white/10">
                             <i class="fa-solid fa-clock text-blue-400"></i>
                             ${formatDate(report.timestamp)}
                         </span>
@@ -276,17 +259,19 @@
             grid.appendChild(card);
         });
 
-        // Bind photo click → lightbox
+       
         document.querySelectorAll('[data-photo]').forEach(wrap => {
             wrap.addEventListener('click', () => {
                 const src = wrap.dataset.photo;
                 document.getElementById('lightbox_img').src = src;
-                document.getElementById('lightbox').classList.add('open');
+                const lb = document.getElementById('lightbox');
+                lb.classList.remove('hidden');
+                lb.classList.add('flex');
                 document.body.style.overflow = 'hidden';
             });
         });
 
-        // Download buttons
+       
         document.querySelectorAll('.download-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const id = btn.dataset.id;
@@ -299,7 +284,7 @@
             });
         });
 
-        // Share buttons
+        
         document.querySelectorAll('.share-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
@@ -307,14 +292,13 @@
                 if (!report) return;
 
                 const shareText =
-                    `📋 RentGuard Inspection Report\n` +
-                    `🗒️ Damage: ${report.notes || 'No notes'}\n` +
-                    `📍 GPS: ${report.latitude ?? 'N/A'}, ${report.longitude ?? 'N/A'}\n` +
-                    `🕐 Recorded: ${report.timestamp}`;
+                    `RentGuard Inspection Report\n` +
+                    `Damage: ${report.notes || 'No notes'}\n` +
+                    `GPS: ${report.latitude ?? 'N/A'}, ${report.longitude ?? 'N/A'}\n` +
+                    `Recorded: ${report.timestamp}`;
 
                 if (navigator.share) {
                     try {
-                        // Try sharing as a file (image) if supported
                         const response = await fetch(report.image);
                         const blob = await response.blob();
                         const file = new File([blob], `RentGuard_${id}.jpg`, { type: 'image/jpeg' });
@@ -330,10 +314,9 @@
                         }
                     }
                 } else {
-                    // Fallback: copy to clipboard
                     try {
                         await navigator.clipboard.writeText(shareText);
-                        alert('📋 Report details copied to clipboard!');
+                        alert('Report details copied to clipboard!');
                     } catch {
                         alert(shareText);
                     }
@@ -341,7 +324,7 @@
             });
         });
 
-        // Delete buttons
+        
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 pendingDeleteId = btn.dataset.id;
@@ -350,7 +333,7 @@
         });
     }
 
-    // Lightbox close
+    
     document.getElementById('lightbox_close').addEventListener('click', closeLightbox);
     document.getElementById('lightbox').addEventListener('click', (e) => {
         if (e.target === document.getElementById('lightbox')) closeLightbox();
@@ -359,12 +342,14 @@
         if (e.key === 'Escape') closeLightbox();
     });
     function closeLightbox() {
-        document.getElementById('lightbox').classList.remove('open');
+        const lb = document.getElementById('lightbox');
+        lb.classList.add('hidden');
+        lb.classList.remove('flex');
         document.body.style.overflow = '';
         document.getElementById('lightbox_img').src = '';
     }
 
-    // Delete modal
+    
     document.getElementById('delete_cancel_btn').addEventListener('click', () => {
         pendingDeleteId = null;
         document.getElementById('delete_modal').classList.add('hidden');
@@ -380,7 +365,7 @@
         renderReports();
     });
 
-    // Clear all
+    
     document.getElementById('clear_all_btn').addEventListener('click', () => {
         if (confirm('Delete ALL saved inspection reports from this device? This cannot be undone.')) {
             localStorage.removeItem(STORAGE_KEY);
@@ -388,7 +373,7 @@
         }
     });
 
-    // Init
+    
     renderReports();
 </script>
 </body>

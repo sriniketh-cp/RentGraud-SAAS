@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             recognition.onstart = () => {
                 isRecording = true;
-                micBtn.innerHTML = '🔴';
+                micBtn.innerHTML = '<i class="fa-solid fa-circle text-red-500"></i>';
                 if (micStatus) micStatus.classList.remove('hidden');
             };
 
@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             recognition.onend = () => {
                 isRecording = false;
-                micBtn.innerHTML = '🎙️';
+                micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
                 if (micStatus) micStatus.classList.add('hidden');
             };
         } else {
@@ -370,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            saveBtn.innerText = "📍 Getting location & saving...";
+            saveBtn.innerHTML = '<i class="fa-solid fa-location-dot"></i> Getting location &amp; saving...';
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -395,18 +395,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     sessionStorage.removeItem('temp_photo');
 
-                    saveBtn.innerText = "✅ Saved Successfully!";
+                    saveBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Saved Successfully!';
                     saveBtn.classList.replace('bg-blue-600', 'bg-green-600');
                     saveBtn.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
                     saveBtn.disabled = true;
 
-                    // Insert "View All Reports" link below save button
+                    
                     if (!document.getElementById('view_reports_btn')) {
                         const viewBtn = document.createElement('a');
                         viewBtn.id = 'view_reports_btn';
                         viewBtn.href = 'reports.html';
                         viewBtn.className = 'block w-full mt-2 text-center text-sm text-blue-600 font-semibold underline underline-offset-2 hover:text-blue-800 transition-colors';
-                        viewBtn.textContent = '📂 View All My Reports →';
+                        viewBtn.innerHTML = '<i class="fa-solid fa-folder-open"></i> View All My Reports';
                         saveBtn.parentNode.insertBefore(viewBtn, saveBtn.nextSibling);
                     }
 
@@ -430,14 +430,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const shareText =
-                `📋 RentGuard Inspection Report\n` +
-                `🗒️ Damage: ${savedRecordData.notes || 'No notes'}\n` +
-                `📍 GPS: ${savedRecordData.latitude}, ${savedRecordData.longitude}\n` +
-                `🕐 Recorded: ${savedRecordData.timestamp}`;
+                `RentGuard Inspection Report\n` +
+                `Damage: ${savedRecordData.notes || 'No notes'}\n` +
+                `GPS: ${savedRecordData.latitude}, ${savedRecordData.longitude}\n` +
+                `Recorded: ${savedRecordData.timestamp}`;
 
             if (navigator.share) {
                 try {
-                    // Attempt to share the annotated photo as an actual image file
+                    
                     const response = await fetch(savedRecordData.image);
                     const blob = await response.blob();
                     const file = new File([blob], `RentGuard_Report_${savedRecordData.id}.jpg`, { type: 'image/jpeg' });
@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({ title: 'RentGuard Inspection Report', text: shareText, files: [file] });
                     } else {
-                        // Fallback: share text only (no broken URL)
+                        
                         await navigator.share({ title: 'RentGuard Inspection Report', text: shareText });
                     }
                     console.log('Successfully shared report');
@@ -455,10 +455,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } else {
-                // Clipboard fallback
+              
                 try {
                     await navigator.clipboard.writeText(shareText);
-                    alert('📋 Report details copied to clipboard! You can paste and send it.');
+                    alert('Report details copied to clipboard. You can paste and send it.');
                 } catch {
                     alert(shareText);
                 }
