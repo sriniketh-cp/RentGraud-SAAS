@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
    
-    const inspectionBtn = document.getElementById('inspection_button');
-    if (inspectionBtn) {
+    const inspectionBtns = document.querySelectorAll('.inspection_button');
+    inspectionBtns.forEach(inspectionBtn => {
         inspectionBtn.addEventListener('click', async () => {
             const video = document.getElementById('video');
             try {
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Could not access the camera.");
             }
         });
-    }
+    });
 
     const captureBtn = document.getElementById('capture_button');
     if (captureBtn) {
