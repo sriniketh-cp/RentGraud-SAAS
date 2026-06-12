@@ -1,14 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Mobile hamburger menu toggle
+
     const mobileMenuBtn = document.getElementById('mobile_menu_btn');
     const mobileMenu = document.getElementById('mobile_menu');
-    
+
     if (mobileMenuBtn && mobileMenu) {
         mobileMenuBtn.addEventListener('click', () => {
             mobileMenu.classList.toggle('hidden');
         });
-        
-        // Close menu when clicking on a link
+
+
         const mobileMenuLinks = mobileMenu.querySelectorAll('a, button');
         mobileMenuLinks.forEach(link => {
             link.addEventListener('click', () => {
@@ -16,11 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-   
+
     const cameraOverlay = document.getElementById('camera_overlay');
     const closeCameraBtn = document.getElementById('close_camera_btn');
 
-    // Helper: stop all camera tracks and hide overlay
     function closeCamera() {
         const video = document.getElementById('video');
         if (video && video.srcObject) {
@@ -31,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = '';
     }
 
-    // "Start Inspection" → open overlay + start camera
+
     const inspectionBtns = document.querySelectorAll('.inspection_button');
     inspectionBtns.forEach(inspectionBtn => {
         inspectionBtn.addEventListener('click', async () => {
@@ -44,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 video.srcObject = stream;
                 cameraOverlay.style.display = 'flex';
-                document.body.style.overflow = 'hidden'; // prevent background scroll
+                document.body.style.overflow = 'hidden';
             } catch (error) {
                 console.error("Camera access denied:", error);
                 alert("Could not access the camera. Please allow camera permissions and try again.");
@@ -52,12 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // "×" close button → stop camera & close overlay
+
     if (closeCameraBtn) {
         closeCameraBtn.addEventListener('click', closeCamera);
     }
 
-    // Shutter / Capture button → grab frame → go to annotation page
+
     const captureBtn = document.getElementById('capture_button');
     if (captureBtn) {
         captureBtn.addEventListener('click', () => {
@@ -74,35 +73,55 @@ document.addEventListener('DOMContentLoaded', () => {
             canvas.height = video.videoHeight || 480;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+           
+            const now = new Date();
+            const timestampText = now.toLocaleString('en-IN'); 
+
+           
+            ctx.font = "bold 24px Arial";     
+            ctx.fillStyle = "#FFD700";        
+            ctx.textAlign = "right";           
+            ctx.textBaseline = "bottom";       
+
+            
+            ctx.shadowColor = "black";
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+
+           
+            const padding = 20;
+            ctx.fillText(`RentGuard Verified: ${timestampText}`, canvas.width - padding, canvas.height - padding);
+
             const photoData = canvas.toDataURL('image/jpeg', 0.8);
             sessionStorage.setItem('temp_photo', photoData);
 
-            // Stop stream before navigating
+
             closeCamera();
             window.location.href = 'camera.html';
         });
     }
 
-    // ── Canvas Annotation (camera.html) ─────────────────────────────────────
+
     const annotationCanvas = document.getElementById('annotation_canvas');
     if (annotationCanvas) {
         const ctx = annotationCanvas.getContext('2d');
-        let currentTool = 'draw';   // 'draw' | 'circle' | 'arrow'
+        let currentTool = 'draw';
         let currentColor = '#ef4444';
         let strokeSize = 4;
         let isDrawing = false;
         let startX = 0, startY = 0;
-        let previewBaseState = null; // snapshot used for live shape preview
-        const undoStack = [];        // stack of ImageData before each action
+        let previewBaseState = null;
+        const undoStack = [];
         const MAX_UNDO = 20;
-        let baseImage = null;        // original captured image (for Clear)
+        let baseImage = null;
 
-        // ── Load image from sessionStorage onto canvas ──
+
         const tempPhotoData = sessionStorage.getItem('temp_photo');
         if (tempPhotoData) {
             baseImage = new Image();
             baseImage.onload = () => {
-                annotationCanvas.width  = baseImage.naturalWidth;
+                annotationCanvas.width = baseImage.naturalWidth;
                 annotationCanvas.height = baseImage.naturalHeight;
                 ctx.drawImage(baseImage, 0, 0);
             };
@@ -112,31 +131,31 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'index.html';
         }
 
-        // ── Helpers ──────────────────────────────────────
+
         function saveUndo(snapshot) {
             undoStack.push(snapshot || ctx.getImageData(0, 0, annotationCanvas.width, annotationCanvas.height));
             if (undoStack.length > MAX_UNDO) undoStack.shift();
         }
 
-        /** Scale pointer position from CSS pixels → canvas pixels */
+
         function getPos(e) {
             const rect = annotationCanvas.getBoundingClientRect();
-            const scaleX = annotationCanvas.width  / rect.width;
+            const scaleX = annotationCanvas.width / rect.width;
             const scaleY = annotationCanvas.height / rect.height;
             const src = e.touches ? e.touches[0] : e;
             return {
                 x: (src.clientX - rect.left) * scaleX,
-                y: (src.clientY - rect.top)  * scaleY
+                y: (src.clientY - rect.top) * scaleY
             };
         }
 
         function applyStyle() {
             ctx.strokeStyle = currentColor;
-            ctx.lineWidth   = strokeSize;
-            ctx.lineCap     = 'round';
-            ctx.lineJoin    = 'round';
+            ctx.lineWidth = strokeSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             ctx.shadowColor = 'rgba(0,0,0,0.35)';
-            ctx.shadowBlur  = 3;
+            ctx.shadowBlur = 3;
         }
 
         function drawEllipse(x1, y1, x2, y2) {
@@ -150,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function drawArrow(x1, y1, x2, y2) {
-            const angle   = Math.atan2(y2 - y1, x2 - x1);
+            const angle = Math.atan2(y2 - y1, x2 - x1);
             const headLen = Math.max(24, strokeSize * 5);
             ctx.beginPath();
             ctx.moveTo(x1, y1);
@@ -161,14 +180,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.stroke();
         }
 
-        // ── Tool selection ────────────────────────────────
+
         const INACTIVE_BTN = ['border-gray-600', 'text-gray-300'];
-        const ACTIVE_BTN   = ['bg-blue-800', 'text-white', 'border-blue-800'];
+        const ACTIVE_BTN = ['bg-blue-800', 'text-white', 'border-blue-800'];
 
         function setTool(tool) {
             currentTool = tool;
             document.querySelectorAll('.tool-btn').forEach(btn => {
-                // Remove active Tailwind classes, restore inactive ones
+
                 btn.classList.remove(...ACTIVE_BTN);
                 btn.classList.add(...INACTIVE_BTN);
             });
@@ -178,16 +197,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeBtn.classList.add(...ACTIVE_BTN);
             }
         }
-        document.getElementById('tool_draw')  ?.addEventListener('click', () => setTool('draw'));
+        document.getElementById('tool_draw')?.addEventListener('click', () => setTool('draw'));
         document.getElementById('tool_circle')?.addEventListener('click', () => setTool('circle'));
-        document.getElementById('tool_arrow') ?.addEventListener('click', () => setTool('arrow'));
+        document.getElementById('tool_arrow')?.addEventListener('click', () => setTool('arrow'));
 
-        // ── Color swatches ────────────────────────────────
-        // Active swatch gets: scale-125 ring-2 ring-{color} ring-offset-2 ring-offset-slate-900
-        // We store the ring color class dynamically using the data-color value mapped to a Tailwind class.
-        const SWATCH_ACTIVE   = ['scale-125', 'ring-2', 'ring-offset-2', 'ring-offset-slate-900'];
+
+        const SWATCH_ACTIVE = ['scale-125', 'ring-2', 'ring-offset-2', 'ring-offset-slate-900'];
         const SWATCH_INACTIVE = ['scale-100'];
-        // Map hex color to the closest Tailwind ring-* class
+
         const ringClassMap = {
             '#ef4444': 'ring-red-500',
             '#facc15': 'ring-yellow-400',
@@ -199,13 +216,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let activeSwatch = document.querySelector('.color-swatch.scale-125');
         document.querySelectorAll('.color-swatch').forEach(swatch => {
             swatch.addEventListener('click', () => {
-                // Deactivate old swatch
+
                 if (activeSwatch) {
                     const oldRing = ringClassMap[activeSwatch.dataset.color];
                     activeSwatch.classList.remove(...SWATCH_ACTIVE, oldRing);
                     activeSwatch.classList.add('scale-100');
                 }
-                // Activate new swatch
+
                 currentColor = swatch.dataset.color;
                 const newRing = ringClassMap[currentColor] || 'ring-white';
                 swatch.classList.remove('scale-100');
@@ -214,22 +231,22 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // ── Stroke size ───────────────────────────────────
+
         const strokeSlider = document.getElementById('stroke_size');
-        const strokeLabel  = document.getElementById('stroke_size_label');
+        const strokeLabel = document.getElementById('stroke_size_label');
         strokeSlider?.addEventListener('input', (e) => {
             strokeSize = parseInt(e.target.value);
             if (strokeLabel) strokeLabel.textContent = strokeSize;
         });
 
-        // ── Undo ──────────────────────────────────────────
+
         document.getElementById('undo_btn')?.addEventListener('click', () => {
             if (undoStack.length > 0) {
                 ctx.putImageData(undoStack.pop(), 0, 0);
             }
         });
 
-        // ── Clear ─────────────────────────────────────────
+
         document.getElementById('clear_btn')?.addEventListener('click', () => {
             if (!baseImage) return;
             if (confirm('Clear all annotations and restore the original photo?')) {
@@ -239,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // ── Pointer event handlers ────────────────────────
+
         function onStart(e) {
             e.preventDefault();
             const { x, y } = getPos(e);
@@ -247,10 +264,10 @@ document.addEventListener('DOMContentLoaded', () => {
             startY = y;
             isDrawing = true;
 
-            // Save canvas state before this stroke for undo
+
             const snapshot = ctx.getImageData(0, 0, annotationCanvas.width, annotationCanvas.height);
             saveUndo(snapshot);
-            previewBaseState = snapshot; // reused during live preview of circle/arrow
+            previewBaseState = snapshot;
 
             applyStyle();
             if (currentTool === 'draw') {
@@ -268,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.lineTo(x, y);
                 ctx.stroke();
             } else {
-                // Restore pre-drag snapshot so each frame draws a clean preview
+
                 ctx.putImageData(previewBaseState, 0, 0);
                 applyStyle();
                 if (currentTool === 'circle') drawEllipse(startX, startY, x, y);
@@ -282,16 +299,16 @@ document.addEventListener('DOMContentLoaded', () => {
             isDrawing = false;
         }
 
-        // Mouse
-        annotationCanvas.addEventListener('mousedown',  onStart);
-        annotationCanvas.addEventListener('mousemove',  onMove);
-        annotationCanvas.addEventListener('mouseup',    onEnd);
+
+        annotationCanvas.addEventListener('mousedown', onStart);
+        annotationCanvas.addEventListener('mousemove', onMove);
+        annotationCanvas.addEventListener('mouseup', onEnd);
         annotationCanvas.addEventListener('mouseleave', onEnd);
 
-        // Touch (passive:false so we can preventDefault and block scroll)
+
         annotationCanvas.addEventListener('touchstart', onStart, { passive: false });
-        annotationCanvas.addEventListener('touchmove',  onMove,  { passive: false });
-        annotationCanvas.addEventListener('touchend',   onEnd,   { passive: false });
+        annotationCanvas.addEventListener('touchmove', onMove, { passive: false });
+        annotationCanvas.addEventListener('touchend', onEnd, { passive: false });
     }
 
     const micBtn = document.getElementById('micBtn');
@@ -303,9 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
             const recognition = new SpeechRecognition();
-            recognition.continuous = false; 
-            recognition.interimResults = true; 
-            recognition.lang = 'en-IN'; 
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-IN';
 
             micBtn.addEventListener('click', () => {
                 if (isRecording) recognition.stop();
@@ -323,12 +340,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     currentTranscript += event.results[i][0].transcript;
                 }
-                
+
                 const existingText = damageNotes.value.trim();
                 if (event.results[0].isFinal && existingText !== '') {
                     damageNotes.value = existingText + ' ' + currentTranscript;
                 } else {
-                     damageNotes.value = currentTranscript;
+                    damageNotes.value = currentTranscript;
                 }
             };
 
@@ -338,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (micStatus) micStatus.classList.add('hidden');
             };
         } else {
-            micBtn.style.display = 'none'; 
+            micBtn.style.display = 'none';
         }
     }
 
@@ -357,11 +374,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                        // Use the annotated canvas export; fall back to raw session photo
-                        const annotCanvas = document.getElementById('annotation_canvas');
-                        const annotatedImage = annotCanvas
-                            ? annotCanvas.toDataURL('image/jpeg', 0.92)
-                            : sessionStorage.getItem('temp_photo');
+
+                    const annotCanvas = document.getElementById('annotation_canvas');
+                    const annotatedImage = annotCanvas
+                        ? annotCanvas.toDataURL('image/jpeg', 0.92)
+                        : sessionStorage.getItem('temp_photo');
 
                     savedRecordData = {
                         id: Date.now(),
@@ -381,8 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     saveBtn.innerText = "✅ Saved Successfully!";
                     saveBtn.classList.replace('bg-blue-600', 'bg-green-600');
                     saveBtn.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
-                    saveBtn.disabled = true; 
-                    
+                    saveBtn.disabled = true;
+
                     if (shareBtn) shareBtn.classList.remove('hidden');
                 },
                 (error) => {

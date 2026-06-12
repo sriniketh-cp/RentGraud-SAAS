@@ -22,7 +22,7 @@
 </head>
 <body class="min-h-screen flex flex-col text-white bg-slate-900">
 
-    <!-- ── Header ─────────────────────────────────────── -->
+    
     <header class="flex items-center gap-3 px-4 py-3 bg-gray-900 border-b border-gray-700 shrink-0">
         <a href="index.html" id="back_btn" class="text-gray-400 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-700">
             <i class="fa-solid fa-arrow-left"></i>
@@ -45,19 +45,18 @@
         </button>
     </header>
 
-    <!-- ── Canvas Area ─────────────────────────────────── -->
+   
     <div class="flex-1 overflow-auto bg-gray-950 flex items-center justify-center p-3 min-h-0">
         <canvas id="annotation_canvas"
             class="block max-w-full max-h-[55vh] rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.6)] cursor-crosshair [touch-action:none]"
         ></canvas>
     </div>
 
-    <!-- ── Drawing Toolbar ─────────────────────────────── -->
+    
     <div class="bg-gray-900 border-t border-gray-700 px-4 py-3 shrink-0">
         <div class="flex items-center gap-2 overflow-x-auto pb-1">
 
-            <!-- Tool buttons -->
-            <!-- Draw is active by default: bg-blue-800 text-white border-blue-800 -->
+           
             <button id="tool_draw"
                 class="tool-btn flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm whitespace-nowrap transition-all duration-150 bg-blue-800 text-white border-blue-800"
                 title="Freehand pen">
@@ -76,9 +75,9 @@
 
             <div class="h-7 w-px bg-gray-700 mx-1 shrink-0"></div>
 
-            <!-- Color swatches -->
+          
             <div class="flex items-center gap-2 shrink-0">
-                <!-- scale-125 ring-2 ring-offset-2 ring-offset-slate-900 mark the active swatch -->
+                
                 <button data-color="#ef4444" class="color-swatch w-7 h-7 rounded-full bg-red-500 border-2 border-red-300 transition-transform duration-100 scale-125 ring-2 ring-red-500 ring-offset-2 ring-offset-slate-900" title="Red"></button>
                 <button data-color="#facc15" class="color-swatch w-7 h-7 rounded-full bg-yellow-400 border-2 border-yellow-200 transition-transform duration-100" title="Yellow"></button>
                 <button data-color="#22c55e" class="color-swatch w-7 h-7 rounded-full bg-green-500 border-2 border-green-300 transition-transform duration-100" title="Green"></button>
@@ -88,7 +87,7 @@
 
             <div class="h-7 w-px bg-gray-700 mx-1 shrink-0"></div>
 
-            <!-- Stroke size slider -->
+            
             <div class="flex items-center gap-2 shrink-0">
                 <span class="text-gray-400 text-xs whitespace-nowrap">Size</span>
                 <input id="stroke_size" type="range" min="2" max="18" value="4"
@@ -98,7 +97,7 @@
         </div>
     </div>
 
-    <!-- ── Notes + Save ────────────────────────────────── -->
+    
     <div class="bg-white border-t border-gray-200 px-4 py-4 shrink-0">
         <label for="damageNotes" class="block text-sm font-bold text-gray-700 mb-1.5">
             Damage Description
