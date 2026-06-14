@@ -44,7 +44,7 @@
             
             <div class="flex-1 hidden md:flex items-center justify-end space-x-4">
                 <button class="text-gray-900 font-medium hover:text-primary transition-colors" id="login_button">Log in</button>
-                <button class="bg-primary hover:bg-blue-900 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg inspection_button" id="inspection_button_desktop">Start Inspection</button>
+                <button class="bg-primary hover:bg-blue-900 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg inspection_button" id="inspection_button_desktop" onclick="openCamera()">Start Inspection</button>
             </div>
 
         
@@ -52,7 +52,7 @@
 
            
             <div class="md:hidden flex items-center">
-                <button id="mobile_menu_btn" class="text-gray-600 hover:text-gray-900 focus:outline-none text-2xl">
+                <button id="mobile_menu_btn" class="text-gray-600 hover:text-gray-900 focus:outline-none text-2xl" onclick="toggleMobileMenu()">
                     <i class="fa-solid fa-bars"></i>
                 </button>
             </div>
@@ -66,7 +66,7 @@
                     <a href="reports.html" class="block text-gray-600 hover:text-primary transition-colors font-medium py-2 flex items-center gap-1.5"><i class="fa-solid fa-images text-sm"></i> My Reports</a>
                     <hr class="my-2">
                     <button class="block w-full text-left text-gray-900 font-medium py-2 hover:text-primary transition-colors" id="login_button">Log in</button>
-                    <button class="w-full bg-primary hover:bg-blue-900 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-md inspection_button" id="inspection_button_mobile">Start Inspection</button>
+                    <button class="w-full bg-primary hover:bg-blue-900 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-md inspection_button" id="inspection_button_mobile" onclick="openCamera()">Start Inspection</button>
                 </div>
             </div>
         </nav>
@@ -238,7 +238,7 @@
     
     <div class="flex items-center justify-between px-4 py-3 bg-black/60">
         <span class="text-white font-semibold text-lg tracking-wide"><i class="fa-solid fa-camera mr-1"></i> Inspection Camera</span>
-        <button id="close_camera_btn" class="text-white text-3xl leading-none hover:text-red-400 transition-colors">&times;</button>
+        <button id="close_camera_btn" class="text-white text-3xl leading-none hover:text-red-400 transition-colors" onclick="closeCamera()">&times;</button>
     </div>
 
     
@@ -260,7 +260,7 @@
 
         
         <button id="capture_button"
-            class="w-20 h-20 rounded-full bg-white border-4 border-gray-300 shadow-xl flex items-center justify-center hover:scale-95 active:scale-90 transition-transform">
+            class="w-20 h-20 rounded-full bg-white border-4 border-gray-300 shadow-xl flex items-center justify-center hover:scale-95 active:scale-90 transition-transform" onclick="capturePhoto()">
             <span class="w-14 h-14 rounded-full bg-white border-4 border-gray-400 block"></span>
         </button>
 

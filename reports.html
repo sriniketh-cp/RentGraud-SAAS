@@ -7,6 +7,7 @@
     <meta name="description" content="View all your saved RentGuard inspection reports with annotated photos, GPS location, and damage notes.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="script.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -18,7 +19,7 @@
                     keyframes: {
                         slideUp: {
                             from: { opacity: '0', transform: 'translateY(24px)' },
-                            to:   { opacity: '1', transform: 'translateY(0)' },
+                            to: { opacity: '1', transform: 'translateY(0)' },
                         }
                     },
                     animation: {
@@ -48,7 +49,7 @@
             </div>
       
             <button id="clear_all_btn"
-                class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-800 text-red-400 hover:bg-red-900/30 hover:text-red-300 text-xs font-semibold transition-all">
+                class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-800 text-red-400 hover:bg-red-900/30 hover:text-red-300 text-xs font-semibold transition-all" onclick="clearAllReports()">
                 <i class="fa-solid fa-trash"></i> Clear All
             </button>
         </div>
@@ -83,7 +84,7 @@
          aria-label="Photo viewer"
          class="hidden fixed inset-0 z-[9999] bg-black/[0.92] backdrop-blur-[4px] items-center justify-center">
         <button id="lightbox_close"
-            class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white text-xl flex items-center justify-center transition-all z-10">
+            class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white text-xl flex items-center justify-center transition-all z-10" onclick="closeLightbox()">
             <i class="fa-solid fa-xmark"></i>
         </button>
         <img id="lightbox_img" src="" alt="Full size inspection photo"
@@ -99,282 +100,20 @@
             <h3 class="text-white font-bold text-lg mb-1">Delete Report?</h3>
             <p class="text-gray-400 text-sm mb-6">This action cannot be undone. The photo and notes will be permanently removed from this device.</p>
             <div class="flex gap-3">
-                <button id="delete_cancel_btn" class="flex-1 py-2.5 rounded-xl border border-slate-600 text-gray-300 hover:bg-slate-700 font-semibold text-sm transition-all">
+                <button id="delete_cancel_btn" class="flex-1 py-2.5 rounded-xl border border-slate-600 text-gray-300 hover:bg-slate-700 font-semibold text-sm transition-all" onclick="cancelDelete()">
                     Cancel
                 </button>
-                <button id="delete_confirm_btn" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-all">
+                <button id="delete_confirm_btn" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-all" onclick="confirmDelete()">
                     Yes, Delete
                 </button>
             </div>
         </div>
     </div>
 
-<script>
-    const STORAGE_KEY = 'rentguard_final_photos';
+    <script>
+        appInit();
+    </script>
 
-    function loadReports() {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    }
 
-    function saveReports(reports) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-    }
-
-    function formatDate(ts) {
-        if (!ts) return 'Unknown time';
-        return ts;
-    }
-
-    function mapsUrl(lat, lng) {
-        return `https://www.google.com/maps?q=${lat},${lng}`;
-    }
-
-    function truncate(str, n) {
-        if (!str) return 'No notes added.';
-        return str.length > n ? str.slice(0, n) + '…' : str;
-    }
-
-    let pendingDeleteId = null;
-
-    
-    const DELAY_CLASSES = [
-        '[animation-delay:0.05s]',
-        '[animation-delay:0.1s]',
-        '[animation-delay:0.15s]',
-        '[animation-delay:0.2s]',
-        '[animation-delay:0.25s]',
-        '[animation-delay:0.3s]',
-    ];
-
-    function renderReports() {
-        const reports = loadReports();
-        const grid = document.getElementById('reports_grid');
-        const emptyState = document.getElementById('empty_state');
-        const countLabel = document.getElementById('report_count_label');
-        const clearAllBtn = document.getElementById('clear_all_btn');
-
-        grid.innerHTML = '';
-
-        if (reports.length === 0) {
-            emptyState.classList.remove('hidden');
-            emptyState.classList.add('flex');
-            grid.classList.add('hidden');
-            clearAllBtn.classList.add('hidden');
-            clearAllBtn.classList.remove('flex');
-            countLabel.textContent = '0 reports saved on this device';
-            return;
-        }
-
-        emptyState.classList.add('hidden');
-        emptyState.classList.remove('flex');
-        grid.classList.remove('hidden');
-        clearAllBtn.classList.remove('hidden');
-        clearAllBtn.classList.add('flex');
-        countLabel.textContent = `${reports.length} report${reports.length !== 1 ? 's' : ''} saved on this device`;
-
-        
-        const sorted = [...reports].reverse();
-
-        sorted.forEach((report, idx) => {
-            const card = document.createElement('div');
-           
-            const delayStyle = `animation-delay: ${idx * 0.05}s`;
-            card.className = 'animate-slide-up bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl hover:shadow-blue-900/20 hover:border-slate-500/60 transition-all duration-300 group flex flex-col';
-            card.style.animationDelay = `${idx * 0.05}s`;
-
-            const hasNotes = report.notes && report.notes.trim() !== '';
-            const hasGPS = report.latitude != null && report.longitude != null;
-
-            card.innerHTML = `
-                <!-- Photo -->
-                <div class="relative overflow-hidden bg-slate-900 aspect-video cursor-zoom-in" data-photo="${report.image}" id="photo_wrap_${report.id}">
-                    <img
-                        src="${report.image}"
-                        alt="Inspection photo"
-                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                    >
-                    <!-- Hover overlay -->
-                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                        <div class="opacity-0 group-hover:opacity-100 transition-opacity w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
-                            <i class="fa-solid fa-magnifying-glass-plus text-white"></i>
-                        </div>
-                    </div>
-                    <!-- Timestamp badge on image -->
-                    <div class="absolute bottom-2 left-2">
-                        <span class="inline-flex items-center gap-[5px] text-[0.72rem] font-semibold px-[10px] py-[3px] rounded-full bg-black/60 text-gray-200 backdrop-blur-sm border border-white/10">
-                            <i class="fa-solid fa-clock text-blue-400"></i>
-                            ${formatDate(report.timestamp)}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Body -->
-                <div class="flex-1 flex flex-col p-4 gap-3">
-
-                    <!-- Notes -->
-                    <div class="flex-1">
-                        <div class="flex items-center gap-1.5 mb-1">
-                            <i class="fa-solid fa-note-sticky text-yellow-400 text-xs"></i>
-                            <span class="text-gray-400 text-xs font-semibold uppercase tracking-wide">Damage Notes</span>
-                        </div>
-                        <p class="text-gray-200 text-sm leading-relaxed ${hasNotes ? '' : 'italic text-gray-500'}">
-                            ${hasNotes ? truncate(report.notes, 120) : 'No notes added.'}
-                        </p>
-                    </div>
-
-                    <!-- GPS -->
-                    ${hasGPS ? `
-                    <a href="${mapsUrl(report.latitude, report.longitude)}" target="_blank" rel="noopener"
-                       class="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-950/40 hover:bg-blue-950/70 border border-blue-900/50 rounded-lg px-3 py-2 group/gps">
-                        <i class="fa-solid fa-location-dot text-red-400 group-hover/gps:animate-bounce"></i>
-                        <span class="font-mono">${report.latitude.toFixed(5)}, ${report.longitude.toFixed(5)}</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square ml-auto text-gray-500"></i>
-                    </a>
-                    ` : `
-                    <div class="flex items-center gap-2 text-xs text-gray-600 bg-slate-900/40 border border-slate-700/40 rounded-lg px-3 py-2">
-                        <i class="fa-solid fa-location-dot-slash"></i>
-                        <span>No GPS location recorded</span>
-                    </div>
-                    `}
-
-                    <!-- Actions -->
-                    <div class="flex gap-2 pt-1">
-                        <button data-id="${report.id}"
-                            class="download-btn flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-gray-200 text-xs font-semibold transition-all border border-slate-600">
-                            <i class="fa-solid fa-download text-green-400"></i> Download
-                        </button>
-                        <button data-id="${report.id}"
-                            class="share-btn flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-gray-200 text-xs font-semibold transition-all border border-slate-600">
-                            <i class="fa-solid fa-share-nodes text-blue-400"></i> Share
-                        </button>
-                        <button data-id="${report.id}"
-                            class="delete-btn w-9 flex items-center justify-center py-2 rounded-xl bg-slate-700 hover:bg-red-900/50 text-red-400 text-xs font-semibold transition-all border border-slate-600 hover:border-red-800">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            grid.appendChild(card);
-        });
-
-       
-        document.querySelectorAll('[data-photo]').forEach(wrap => {
-            wrap.addEventListener('click', () => {
-                const src = wrap.dataset.photo;
-                document.getElementById('lightbox_img').src = src;
-                const lb = document.getElementById('lightbox');
-                lb.classList.remove('hidden');
-                lb.classList.add('flex');
-                document.body.style.overflow = 'hidden';
-            });
-        });
-
-       
-        document.querySelectorAll('.download-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.dataset.id;
-                const report = loadReports().find(r => String(r.id) === String(id));
-                if (!report) return;
-                const a = document.createElement('a');
-                a.href = report.image;
-                a.download = `RentGuard_Report_${id}.jpg`;
-                a.click();
-            });
-        });
-
-        
-        document.querySelectorAll('.share-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.dataset.id;
-                const report = loadReports().find(r => String(r.id) === String(id));
-                if (!report) return;
-
-                const shareText =
-                    `RentGuard Inspection Report\n` +
-                    `Damage: ${report.notes || 'No notes'}\n` +
-                    `GPS: ${report.latitude ?? 'N/A'}, ${report.longitude ?? 'N/A'}\n` +
-                    `Recorded: ${report.timestamp}`;
-
-                if (navigator.share) {
-                    try {
-                        const response = await fetch(report.image);
-                        const blob = await response.blob();
-                        const file = new File([blob], `RentGuard_${id}.jpg`, { type: 'image/jpeg' });
-
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({ title: 'RentGuard Inspection Report', text: shareText, files: [file] });
-                        } else {
-                            await navigator.share({ title: 'RentGuard Inspection Report', text: shareText });
-                        }
-                    } catch (err) {
-                        if (err.name !== 'AbortError') {
-                            console.error('Share failed:', err);
-                        }
-                    }
-                } else {
-                    try {
-                        await navigator.clipboard.writeText(shareText);
-                        alert('Report details copied to clipboard!');
-                    } catch {
-                        alert(shareText);
-                    }
-                }
-            });
-        });
-
-        
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                pendingDeleteId = btn.dataset.id;
-                document.getElementById('delete_modal').classList.remove('hidden');
-            });
-        });
-    }
-
-    
-    document.getElementById('lightbox_close').addEventListener('click', closeLightbox);
-    document.getElementById('lightbox').addEventListener('click', (e) => {
-        if (e.target === document.getElementById('lightbox')) closeLightbox();
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeLightbox();
-    });
-    function closeLightbox() {
-        const lb = document.getElementById('lightbox');
-        lb.classList.add('hidden');
-        lb.classList.remove('flex');
-        document.body.style.overflow = '';
-        document.getElementById('lightbox_img').src = '';
-    }
-
-    
-    document.getElementById('delete_cancel_btn').addEventListener('click', () => {
-        pendingDeleteId = null;
-        document.getElementById('delete_modal').classList.add('hidden');
-    });
-    document.getElementById('delete_confirm_btn').addEventListener('click', () => {
-        if (pendingDeleteId != null) {
-            let reports = loadReports();
-            reports = reports.filter(r => String(r.id) !== String(pendingDeleteId));
-            saveReports(reports);
-            pendingDeleteId = null;
-        }
-        document.getElementById('delete_modal').classList.add('hidden');
-        renderReports();
-    });
-
-    
-    document.getElementById('clear_all_btn').addEventListener('click', () => {
-        if (confirm('Delete ALL saved inspection reports from this device? This cannot be undone.')) {
-            localStorage.removeItem(STORAGE_KEY);
-            renderReports();
-        }
-    });
-
-    
-    renderReports();
-</script>
 </body>
 </html>

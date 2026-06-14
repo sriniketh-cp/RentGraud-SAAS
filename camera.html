@@ -18,7 +18,7 @@
             }
         }
     </script>
-    <script src="script.js" defer></script>
+    <script src="script.js"></script>
 </head>
 <body class="min-h-screen flex flex-col text-white bg-slate-900">
 
@@ -33,13 +33,13 @@
         </div>
         <button id="undo_btn"
             class="text-gray-300 hover:text-white px-3 py-1.5 rounded-lg border border-gray-600 hover:border-gray-400 text-xs flex items-center gap-1.5 transition-all"
-            title="Undo last action">
+            title="Undo last action" onclick="saveUndo()">
             <i class="fa-solid fa-rotate-left"></i>
             <span>Undo</span>
         </button>
         <button id="clear_btn"
             class="text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg border border-red-900 hover:border-red-600 text-xs flex items-center gap-1.5 transition-all"
-            title="Clear all annotations">
+            title="Clear all annotations" onclick="clearAnnotations()">
             <i class="fa-solid fa-trash-can"></i>
             <span>Clear</span>
         </button>
@@ -49,6 +49,7 @@
     <div class="flex-1 overflow-auto bg-gray-950 flex items-center justify-center p-3 min-h-0">
         <canvas id="annotation_canvas"
             class="block max-w-full max-h-[55vh] rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.6)] cursor-crosshair [touch-action:none]"
+            onclick="canvasClick(event)"
         ></canvas>
     </div>
 
@@ -59,17 +60,17 @@
            
             <button id="tool_draw"
                 class="tool-btn flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm whitespace-nowrap transition-all duration-150 bg-blue-800 text-white border-blue-800"
-                title="Freehand pen">
+                title="Freehand pen" onclick="setTool('draw')">
                 <i class="fa-solid fa-pen"></i> Draw
             </button>
             <button id="tool_circle"
                 class="tool-btn flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-600 text-gray-300 text-sm whitespace-nowrap transition-all duration-150"
-                title="Circle / ellipse">
+                title="Circle / ellipse" onclick="setTool('circle')">
                 <i class="fa-regular fa-circle"></i> Circle
             </button>
             <button id="tool_arrow"
                 class="tool-btn flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-600 text-gray-300 text-sm whitespace-nowrap transition-all duration-150"
-                title="Arrow">
+                title="Arrow" onclick="setTool('arrow')">
                 <i class="fa-solid fa-arrow-right-long"></i> Arrow
             </button>
 
@@ -78,11 +79,11 @@
           
             <div class="flex items-center gap-2 shrink-0">
                 
-                <button data-color="#ef4444" class="color-swatch w-7 h-7 rounded-full bg-red-500 border-2 border-red-300 transition-transform duration-100 scale-125 ring-2 ring-red-500 ring-offset-2 ring-offset-slate-900" title="Red"></button>
-                <button data-color="#facc15" class="color-swatch w-7 h-7 rounded-full bg-yellow-400 border-2 border-yellow-200 transition-transform duration-100" title="Yellow"></button>
-                <button data-color="#22c55e" class="color-swatch w-7 h-7 rounded-full bg-green-500 border-2 border-green-300 transition-transform duration-100" title="Green"></button>
-                <button data-color="#60a5fa" class="color-swatch w-7 h-7 rounded-full bg-blue-400 border-2 border-blue-200 transition-transform duration-100" title="Blue"></button>
-                <button data-color="#ffffff" class="color-swatch w-7 h-7 rounded-full bg-white border-2 border-gray-400 transition-transform duration-100" title="White"></button>
+                <button data-color="#ef4444" class="color-swatch w-7 h-7 rounded-full bg-red-500 border-2 border-red-300 transition-transform duration-100 scale-125 ring-2 ring-red-500 ring-offset-2 ring-offset-slate-900" title="Red" onclick="setColor(this, this.dataset.color)"></button>
+                <button data-color="#facc15" class="color-swatch w-7 h-7 rounded-full bg-yellow-400 border-2 border-yellow-200 transition-transform duration-100" title="Yellow" onclick="setColor(this, this.dataset.color)"></button>
+                <button data-color="#22c55e" class="color-swatch w-7 h-7 rounded-full bg-green-500 border-2 border-green-300 transition-transform duration-100" title="Green" onclick="setColor(this, this.dataset.color)"></button>
+                <button data-color="#60a5fa" class="color-swatch w-7 h-7 rounded-full bg-blue-400 border-2 border-blue-200 transition-transform duration-100" title="Blue" onclick="setColor(this, this.dataset.color)"></button>
+                <button data-color="#ffffff" class="color-swatch w-7 h-7 rounded-full bg-white border-2 border-gray-400 transition-transform duration-100" title="White" onclick="setColor(this, this.dataset.color)"></button>
             </div>
 
             <div class="h-7 w-px bg-gray-700 mx-1 shrink-0"></div>
@@ -111,19 +112,22 @@
             ></textarea>
             <button id="micBtn"
                 class="absolute bottom-3 right-3 p-1.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-base"
-                title="Voice dictation"><i class="fa-solid fa-microphone"></i></button>
+                title="Voice dictation" onclick="toggleMic()"><i class="fa-solid fa-microphone"></i></button>
         </div>
         <p id="micStatus" class="text-xs text-red-500 font-bold mb-3 hidden animate-pulse"><i class="fa-solid fa-circle text-red-500"></i> Listening... Speak now.</p>
 
         <button id="save_photo_button"
-            class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all">
+            class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all" onclick="saveReport()">
             <i class="fa-solid fa-location-dot"></i> Save Annotated Photo + Location + Notes
         </button>
         <button id="shareBtn"
-            class="hidden w-full mt-3 border-2 border-blue-600 text-blue-600 bg-white py-3 rounded-xl font-bold shadow hover:bg-blue-50 active:scale-95 transition-all">
+            class="hidden w-full mt-3 border-2 border-blue-600 text-blue-600 bg-white py-3 rounded-xl font-bold shadow hover:bg-blue-50 active:scale-95 transition-all" onclick="shareReport()">
             <i class="fa-solid fa-share-nodes"></i> Share with Landlord
         </button>
     </div>
 
+<script>
+    appInit();
+</script>
 </body>
 </html>
