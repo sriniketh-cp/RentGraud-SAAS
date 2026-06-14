@@ -33,7 +33,7 @@
         </div>
         <button id="undo_btn"
             class="text-gray-300 hover:text-white px-3 py-1.5 rounded-lg border border-gray-600 hover:border-gray-400 text-xs flex items-center gap-1.5 transition-all"
-            title="Undo last action" onclick="saveUndo()">
+            title="Undo last action" onclick="undoAnnotation()">
             <i class="fa-solid fa-rotate-left"></i>
             <span>Undo</span>
         </button>
@@ -110,12 +110,6 @@
                 class="w-full border border-gray-300 rounded-lg p-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-sm resize-none"
                 placeholder="Tap the mic or type to describe the damage..."
             ></textarea>
-            <button id="micBtn"
-                class="absolute bottom-3 right-3 p-1.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-base"
-                title="Voice dictation" onclick="toggleMic()"><i class="fa-solid fa-microphone"></i></button>
-        </div>
-        <p id="micStatus" class="text-xs text-red-500 font-bold mb-3 hidden animate-pulse"><i class="fa-solid fa-circle text-red-500"></i> Listening... Speak now.</p>
-
         <button id="save_photo_button"
             class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all" onclick="saveReport()">
             <i class="fa-solid fa-location-dot"></i> Save Annotated Photo + Location + Notes

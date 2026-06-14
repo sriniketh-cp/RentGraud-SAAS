@@ -120,7 +120,7 @@ function savePhoto() {
     capturePhoto();
 }
 
-function initAnnotationCanvas() {
+async function initAnnotationCanvas() {
     const canvas = getCanvasEl();
     if (!canvas) return;
 
@@ -132,13 +132,23 @@ function initAnnotationCanvas() {
     }
 
     baseImage = new Image();
-    baseImage.onload = function () {
-        canvas.width = baseImage.naturalWidth;
-        canvas.height = baseImage.naturalHeight;
-        const ctx = getAnnotationCtx();
-        if (ctx) ctx.drawImage(baseImage, 0, 0);
-    };
     baseImage.src = tempPhotoData;
+
+    try {
+        if (baseImage.decode) {
+            await baseImage.decode();
+        } else if (!baseImage.complete || !baseImage.naturalWidth) {
+            return;
+        }
+    } catch (error) {
+        console.error('Failed to load inspection photo:', error);
+        return;
+    }
+
+    canvas.width = baseImage.naturalWidth;
+    canvas.height = baseImage.naturalHeight;
+    const ctx = getAnnotationCtx();
+    if (ctx) ctx.drawImage(baseImage, 0, 0);
 }
 
 function saveUndo() {
@@ -309,54 +319,7 @@ function clearAnnotations() {
     }
 }
 
-function initSpeech() {
-    const micBtn = document.getElementById('micBtn');
-    if (!micBtn) return;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        micBtn.style.display = 'none';
-        return;
-    }
-
-    recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = 'en-IN';
-
-    recognition.onstart = function () {
-        isRecording = true;
-        micBtn.innerHTML = '<i class="fa-solid fa-circle text-red-500"></i>';
-        const micStatus = document.getElementById('micStatus');
-        if (micStatus) micStatus.classList.remove('hidden');
-    };
-
-    recognition.onresult = function (event) {
-        const damageNotes = document.getElementById('damageNotes');
-        if (!damageNotes) return;
-
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
-        }
-
-        const existing = damageNotes.value.trim();
-        damageNotes.value = event.results[0].isFinal && existing ? existing + ' ' + transcript : transcript;
-    };
-
-    recognition.onend = function () {
-        isRecording = false;
-        micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-        const micStatus = document.getElementById('micStatus');
-        if (micStatus) micStatus.classList.add('hidden');
-    };
-}
-
-function toggleMic() {
-    if (!recognition) return;
-    if (isRecording) recognition.stop();
-    else recognition.start();
-}
 
 function saveReport() {
     const saveBtn = document.getElementById('save_photo_button');
@@ -456,7 +419,6 @@ function appInit() {
     const annotationCanvas = getCanvasEl();
     if (annotationCanvas) {
         initAnnotationCanvas();
-        initSpeech();
         updateStrokeLabel();
         setTool(currentTool);
         setColorByValue(currentColor);
