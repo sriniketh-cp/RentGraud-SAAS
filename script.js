@@ -1,3 +1,8 @@
+ import { initializeApp }                       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword,
+             createUserWithEmailAndPassword,
+             signInWithPopup, GoogleAuthProvider }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 document.addEventListener('DOMContentLoaded', () => {
 
     const mobileMenuBtn = document.getElementById('mobile_menu_btn');
@@ -16,6 +21,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    document.getElementById("login_button_desktop")?.addEventListener('click', () => {
+        window.location.href = "login.html";
+    });
+
+    document.getElementById("login_button_mobile")?.addEventListener('click', () => {
+        window.location.href = "login.html";
+    });
 
     const cameraOverlay = document.getElementById('camera_overlay');
     const closeCameraBtn = document.getElementById('close_camera_btn');
@@ -706,7 +719,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 pendingDeleteId = btn.dataset.id;
@@ -759,4 +771,190 @@ document.addEventListener('DOMContentLoaded', () => {
     renderReports();
     }
 
+   
+
+   
+    const firebaseConfig = {
+      apiKey:            "AIzaSyD8_Uo1PGq730v-tF9Q_X2ahYNYtUhD3Hc",
+      authDomain:        "hidden-server-307712.firebaseapp.com",
+      projectId:         "hidden-server-307712",
+      storageBucket:     "hidden-server-307712.firebasestorage.app",
+      messagingSenderId: "416495131326",
+      appId:             "1:416495131326:web:86fe6b30b6e415f84fdcef"
+    };
+
+ 
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const googleProvider = new GoogleAuthProvider();
+
+
+    
+    function showAlert(message, type) {
+      const box = document.getElementById("alert-box");
+      box.textContent = message;
+      box.className = [
+        "mb-5 px-4 py-3 rounded-lg text-sm font-medium",
+        type === "success"
+          ? "bg-green-50 text-green-700 border border-green-200"
+          : "bg-red-50 text-red-700 border border-red-200"
+      ].join(" ");
+    }
+
+    
+    function hideAlert() {
+      document.getElementById("alert-box").className = "hidden";
+    }
+
+    
+    function setLoading(btnId, loading) {
+      const btn     = document.getElementById(btnId);
+      const spinner = document.getElementById(btnId + "-spinner");
+
+      btn.disabled = loading;
+      spinner.classList.toggle("hidden", !loading);
+
+      
+      btn.classList.toggle("opacity-70", loading);
+      btn.classList.toggle("cursor-not-allowed", loading);
+    }
+
+  
+    function goToDashboard() {
+      window.location.href = "reports.html";
+    }
+
+    function getFirebaseErrorMessage(code) {
+      const messages = {
+        "auth/invalid-email":          "That doesn't look like a valid email address.",
+        "auth/user-not-found":         "No account found with that email.",
+        "auth/wrong-password":         "Incorrect password. Please try again.",
+        "auth/invalid-credential":     "Incorrect email or password.",
+        "auth/email-already-in-use":   "An account with this email already exists.",
+        "auth/weak-password":          "Password must be at least 6 characters.",
+        "auth/too-many-requests":      "Too many attempts. Please wait a moment and try again.",
+        "auth/popup-closed-by-user":   "Google sign-in was cancelled.",
+        "auth/network-request-failed": "Network error. Check your internet connection.",
+      };
+      return messages[code] || "Something went wrong. Please try again.";
+    }
+
+
+   
+    window.handleLogin = async function (event) {
+      event.preventDefault();   
+      hideAlert();
+
+      
+      const email    = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+
+     
+      if (!email || !password) {
+        showAlert("Please fill in both fields.", "error");
+        return;
+      }
+
+      setLoading("btn-login", true); 
+
+      try {
+      
+        await signInWithEmailAndPassword(auth, email, password);
+
+       
+        goToDashboard();
+
+      } catch (error) {
+       
+        showAlert(getFirebaseErrorMessage(error.code), "error");
+        setLoading("btn-login", false); 
+      }
+    };
+
+    window.handleSignUp = async function (event) {
+      event.preventDefault();
+      hideAlert();
+
+      const email    = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
+
+      if (!email || !password) {
+        showAlert("Please fill in both fields.", "error");
+        return;
+      }
+
+      if (password.length < 6) {
+        showAlert("Password must be at least 6 characters.", "error");
+        return;
+      }
+
+      setLoading("btn-signup", true);
+
+      try {
+        
+        await createUserWithEmailAndPassword(auth, email, password);
+
+      
+        showAlert("Account created! You can now log in.", "success");
+        setLoading("btn-signup", false);
+
+        
+        document.getElementById("signup-email").value    = "";
+        document.getElementById("signup-password").value = "";
+
+       
+        setTimeout(() => {
+          switchTab("login");
+        }, 1500);
+
+      } catch (error) {
+        showAlert(getFirebaseErrorMessage(error.code), "error");
+        setLoading("btn-signup", false);
+      }
+    };
+
+    
+    window.handleGoogleSignIn = async function () {
+      hideAlert();
+
+      try {
+     
+        await signInWithPopup(auth, googleProvider);
+
+       
+        goToDashboard();
+
+      } catch (error) {
+        showAlert(getFirebaseErrorMessage(error.code), "error");
+      }
+    };
+
+  
+  
+   
+    function switchTab(tabName) {
+    
+      document.querySelectorAll(".tab-content").forEach(panel => {
+        panel.classList.remove("active");
+      });
+
+    
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.remove("text-brand-600", "border-brand-600");
+        btn.classList.add("text-slate-400", "border-transparent");
+      });
+
+     
+      document.getElementById("content-" + tabName).classList.add("active");
+
+     
+      const activeBtn = document.getElementById("tab-" + tabName);
+      activeBtn.classList.add("text-brand-600", "border-brand-600");
+      activeBtn.classList.remove("text-slate-400", "border-transparent");
+
+    
+      document.getElementById("alert-box").className = "hidden";
+    }
 });
+

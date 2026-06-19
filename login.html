@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Lab Project</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom Tailwind config (extend only, no override) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50:  "#eff6ff",
+              100: "#dbeafe",
+              500: "#3b82f6",
+              600: "#2563eb",
+              700: "#1d4ed8",
+            }
+          },
+          keyframes: {
+            "fade-in": {
+              "0%":   { opacity: "0", transform: "translateY(8px)" },
+              "100%": { opacity: "1", transform: "translateY(0)" }
+            }
+          },
+          animation: {
+            "fade-in": "fade-in 0.25s ease-out both"
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Smooth tab-content transition */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Input focus ring override for brand color */
+    .input-field:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-10">
+
+  <!-- ============================================================
+       AUTHENTICATION CARD
+       ============================================================ -->
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden animate-fade-in">
+
+    <!-- Card header / branding -->
+    <div class="bg-brand-600 px-8 py-7">
+      <h1 class="text-white text-2xl font-semibold tracking-tight">Welcome</h1>
+      <p class="text-brand-100 text-sm mt-1">Sign in to continue to your dashboard</p>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="flex border-b border-slate-200">
+      <button
+        id="tab-login"
+        onclick="switchTab('login')"
+        class="tab-btn flex-1 py-3.5 text-sm font-semibold text-brand-600 border-b-2 border-brand-600 bg-white transition-colors duration-150"
+        aria-selected="true"
+      >
+        Log In
+      </button>
+      <button
+        id="tab-signup"
+        onclick="switchTab('signup')"
+        class="tab-btn flex-1 py-3.5 text-sm font-semibold text-slate-400 border-b-2 border-transparent bg-white hover:text-slate-700 transition-colors duration-150"
+        aria-selected="false"
+      >
+        Sign Up
+      </button>
+    </div>
+
+    <!-- Card body -->
+    <div class="px-8 py-7">
+
+      <!-- ---- Alert box (hidden by default) ---- -->
+      <div
+        id="alert-box"
+        class="hidden mb-5 px-4 py-3 rounded-lg text-sm font-medium"
+        role="alert"
+      ></div>
+
+      <!-- ========== LOGIN FORM ========== -->
+      <div id="content-login" class="tab-content active">
+        <form onsubmit="handleLogin(event)" novalidate>
+
+          <!-- Email -->
+          <div class="mb-4">
+            <label for="login-email" class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+              Email
+            </label>
+            <input
+              id="login-email"
+              type="email"
+              placeholder="you@example.com"
+              required
+              autocomplete="email"
+              class="input-field w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-800 text-sm transition-shadow duration-150"
+            />
+          </div>
+
+          <!-- Password -->
+          <div class="mb-6">
+            <label for="login-password" class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+              Password
+            </label>
+            <input
+              id="login-password"
+              type="password"
+              placeholder="••••••••"
+              required
+              autocomplete="current-password"
+              class="input-field w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-800 text-sm transition-shadow duration-150"
+            />
+          </div>
+
+          <!-- Submit button -->
+          <button
+            id="btn-login"
+            type="submit"
+            class="w-full py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 active:bg-brand-700 text-white text-sm font-semibold transition-colors duration-150 flex items-center justify-center gap-2"
+          >
+            <span id="btn-login-text">Log In</span>
+            <!-- Spinner (hidden by default) -->
+            <svg id="btn-login-spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </button>
+        </form>
+
+        <!-- Divider -->
+        <div class="flex items-center gap-3 my-5">
+          <hr class="flex-1 border-slate-200" />
+          <span class="text-xs text-slate-400 font-medium">or</span>
+          <hr class="flex-1 border-slate-200" />
+        </div>
+
+        <!-- Google Sign-In -->
+        <button
+          id="btn-google-login"
+          onclick="handleGoogleSignIn()"
+          class="w-full py-2.5 rounded-lg border border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-sm font-semibold transition-colors duration-150 flex items-center justify-center gap-2.5"
+        >
+          <!-- Google "G" icon (inline SVG — no external icon library needed) -->
+          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <!-- ========== SIGN UP FORM ========== -->
+      <div id="content-signup" class="tab-content">
+        <form onsubmit="handleSignUp(event)" novalidate>
+
+          <!-- Email -->
+          <div class="mb-4">
+            <label for="signup-email" class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+              Email
+            </label>
+            <input
+              id="signup-email"
+              type="email"
+              placeholder="you@example.com"
+              required
+              autocomplete="email"
+              class="input-field w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-800 text-sm transition-shadow duration-150"
+            />
+          </div>
+
+          <!-- Password -->
+          <div class="mb-6">
+            <label for="signup-password" class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+              Password
+              <span class="normal-case font-normal text-slate-400 ml-1">(min. 6 characters)</span>
+            </label>
+            <input
+              id="signup-password"
+              type="password"
+              placeholder="••••••••"
+              required
+              minlength="6"
+              autocomplete="new-password"
+              class="input-field w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-800 text-sm transition-shadow duration-150"
+            />
+          </div>
+
+          <!-- Submit button -->
+          <button
+            id="btn-signup"
+            type="submit"
+            class="w-full py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 active:bg-brand-700 text-white text-sm font-semibold transition-colors duration-150 flex items-center justify-center gap-2"
+          >
+            <span id="btn-signup-text">Create Account</span>
+            <svg id="btn-signup-spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </button>
+        </form>
+
+        <!-- Divider -->
+        <div class="flex items-center gap-3 my-5">
+          <hr class="flex-1 border-slate-200" />
+          <span class="text-xs text-slate-400 font-medium">or</span>
+          <hr class="flex-1 border-slate-200" />
+        </div>
+
+        <!-- Google Sign-Up -->
+        <button
+          id="btn-google-signup"
+          onclick="handleGoogleSignIn()"
+          class="w-full py-2.5 rounded-lg border border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-sm font-semibold transition-colors duration-150 flex items-center justify-center gap-2.5"
+        >
+          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+
+    </div><!-- /card body -->
+  </div><!-- /card -->
+
+
+  <!-- ============================================================
+       FIREBASE SETUP
+       Import Firebase using CDN ES Modules (no npm required)
+       Replace the firebaseConfig values with your own project's keys.
+       ============================================================ -->
+  <script type="module">
+
+    // ── 1. Firebase SDK imports from CDN ─────────────────────────
+    import { initializeApp }                       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword,
+             createUserWithEmailAndPassword,
+             signInWithPopup, GoogleAuthProvider }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // ── 2. Your Firebase project configuration ───────────────────
+    //    Replace each value below with the ones from your Firebase console:
+    //    Firebase Console → Project Settings → "Your apps" → SDK setup
+    const firebaseConfig = {
+      apiKey:            "AIzaSyD8_Uo1PGq730v-tF9Q_X2ahYNYtUhD3Hc",
+      authDomain:        "hidden-server-307712.firebaseapp.com",
+      projectId:         "hidden-server-307712",
+      storageBucket:     "hidden-server-307712.firebasestorage.app",
+      messagingSenderId: "416495131326",
+      appId:             "1:416495131326:web:86fe6b30b6e415f84fdcef"
+    };
+
+    // ── 3. Initialize Firebase ────────────────────────────────────
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // ── 4. Google provider ────────────────────────────────────────
+    const googleProvider = new GoogleAuthProvider();
+
+
+    // ─────────────────────────────────────────────────────────────
+    // HELPER FUNCTIONS
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * showAlert — displays a message inside the card.
+     * @param {string} message  - Text to show
+     * @param {"success"|"error"} type - Controls colour
+     */
+    function showAlert(message, type) {
+      const box = document.getElementById("alert-box");
+      box.textContent = message;
+      box.className = [
+        "mb-5 px-4 py-3 rounded-lg text-sm font-medium",
+        type === "success"
+          ? "bg-green-50 text-green-700 border border-green-200"
+          : "bg-red-50 text-red-700 border border-red-200"
+      ].join(" ");
+    }
+
+    /** hideAlert — hides the alert box */
+    function hideAlert() {
+      document.getElementById("alert-box").className = "hidden";
+    }
+
+    /**
+     * setLoading — shows/hides the spinner on a button.
+     * @param {string} btnId     - e.g. "btn-login"
+     * @param {boolean} loading  - true = show spinner, false = hide
+     */
+    function setLoading(btnId, loading) {
+      const btn     = document.getElementById(btnId);
+      const spinner = document.getElementById(btnId + "-spinner");
+
+      btn.disabled = loading;
+      spinner.classList.toggle("hidden", !loading);
+
+      // Dim button while loading so user knows it's working
+      btn.classList.toggle("opacity-70", loading);
+      btn.classList.toggle("cursor-not-allowed", loading);
+    }
+
+     /**
+     * goToDashboard — redirects the user after successful auth.
+     * Change "reports.html" to whatever your next page is called.
+     */
+    function goToDashboard() {
+      window.location.href = "reports.html";
+    }
+
+    /**
+     * getFirebaseErrorMessage — converts Firebase error codes into
+     * plain English messages that make sense to end users.
+     * @param {string} code - e.g. "auth/wrong-password"
+     * @returns {string}
+     */
+    function getFirebaseErrorMessage(code) {
+      const messages = {
+        "auth/invalid-email":          "That doesn't look like a valid email address.",
+        "auth/user-not-found":         "No account found with that email.",
+        "auth/wrong-password":         "Incorrect password. Please try again.",
+        "auth/invalid-credential":     "Incorrect email or password.",
+        "auth/email-already-in-use":   "An account with this email already exists.",
+        "auth/weak-password":          "Password must be at least 6 characters.",
+        "auth/too-many-requests":      "Too many attempts. Please wait a moment and try again.",
+        "auth/popup-closed-by-user":   "Google sign-in was cancelled.",
+        "auth/network-request-failed": "Network error. Check your internet connection.",
+      };
+      return messages[code] || "Something went wrong. Please try again.";
+    }
+
+
+    // ─────────────────────────────────────────────────────────────
+    // AUTH HANDLERS  (attached to window so HTML onclick can call them)
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * handleLogin — signs the user in with email + password.
+     * Called when the Login form is submitted.
+     */
+    window.handleLogin = async function (event) {
+      event.preventDefault();   // Stop the page from refreshing
+      hideAlert();
+
+      // Read values from the form inputs
+      const email    = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+
+      // Basic client-side check before hitting Firebase
+      if (!email || !password) {
+        showAlert("Please fill in both fields.", "error");
+        return;
+      }
+
+      setLoading("btn-login", true);  // Show spinner
+
+      try {
+        // Firebase call — sign in with email and password
+        await signInWithEmailAndPassword(auth, email, password);
+
+        // If we reach this line, login succeeded
+        goToDashboard();
+
+      } catch (error) {
+        // Firebase sends an error code — translate it to a readable message
+        showAlert(getFirebaseErrorMessage(error.code), "error");
+        setLoading("btn-login", false);  // Hide spinner
+      }
+    };
+
+    /**
+     * handleSignUp — creates a new Firebase account.
+     * Called when the Sign Up form is submitted.
+     */
+    window.handleSignUp = async function (event) {
+      event.preventDefault();
+      hideAlert();
+
+      const email    = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
+
+      if (!email || !password) {
+        showAlert("Please fill in both fields.", "error");
+        return;
+      }
+
+      if (password.length < 6) {
+        showAlert("Password must be at least 6 characters.", "error");
+        return;
+      }
+
+      setLoading("btn-signup", true);
+
+      try {
+        // Firebase call — create account
+        await createUserWithEmailAndPassword(auth, email, password);
+
+        // After sign-up: show success, then switch to Login tab
+        showAlert("Account created! You can now log in.", "success");
+        setLoading("btn-signup", false);
+
+        // Clear the signup form
+        document.getElementById("signup-email").value    = "";
+        document.getElementById("signup-password").value = "";
+
+        // Switch to Login tab after a short delay so user can read the message
+        setTimeout(() => {
+          switchTab("login");
+        }, 1500);
+
+      } catch (error) {
+        showAlert(getFirebaseErrorMessage(error.code), "error");
+        setLoading("btn-signup", false);
+      }
+    };
+
+    /**
+     * handleGoogleSignIn — opens a Google sign-in popup.
+     * Works for both Login and Sign Up (Firebase handles both cases).
+     */
+    window.handleGoogleSignIn = async function () {
+      hideAlert();
+
+      try {
+        // Firebase call — open Google popup
+        await signInWithPopup(auth, googleProvider);
+
+        // On success, go to dashboard
+        goToDashboard();
+
+      } catch (error) {
+        showAlert(getFirebaseErrorMessage(error.code), "error");
+      }
+    };
+
+  </script>
+
+
+  <!-- ============================================================
+       TAB SWITCHING  (plain JS — no module needed)
+       ============================================================ -->
+  <script>
+    /**
+     * switchTab — shows the correct form and highlights the active tab button.
+     * @param {"login"|"signup"} tabName
+     */
+    function switchTab(tabName) {
+      // Hide all tab content panels
+      document.querySelectorAll(".tab-content").forEach(panel => {
+        panel.classList.remove("active");
+      });
+
+      // Remove active style from all tab buttons
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.remove("text-brand-600", "border-brand-600");
+        btn.classList.add("text-slate-400", "border-transparent");
+      });
+
+      // Show the chosen panel
+      document.getElementById("content-" + tabName).classList.add("active");
+
+      // Highlight the chosen button
+      const activeBtn = document.getElementById("tab-" + tabName);
+      activeBtn.classList.add("text-brand-600", "border-brand-600");
+      activeBtn.classList.remove("text-slate-400", "border-transparent");
+
+      // Clear any existing alerts when switching tabs
+      document.getElementById("alert-box").className = "hidden";
+    }
+  </script>
+
+</body>
+</html>
