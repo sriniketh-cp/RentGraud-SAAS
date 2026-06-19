@@ -328,7 +328,11 @@
      * Change "reports.html" to whatever your next page is called.
      */
     function goToDashboard() {
-      window.location.href = "reports.html";
+      sessionStorage.setItem("rentguard_logged_in", "true");
+
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+      window.location.href = redirect === "reports.html" ? redirect : "reports.html";
     }
 
     /**

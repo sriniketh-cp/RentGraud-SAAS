@@ -1,7 +1,8 @@
  import { initializeApp }                       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword,
              createUserWithEmailAndPassword,
-             signInWithPopup, GoogleAuthProvider }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+             signInWithPopup, GoogleAuthProvider,
+             onAuthStateChanged }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -431,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!document.getElementById('view_reports_btn')) {
                         const viewBtn = document.createElement('a');
                         viewBtn.id = 'view_reports_btn';
-                        viewBtn.href = 'reports.html';
+                        viewBtn.href = 'login.html?redirect=reports.html';
                         viewBtn.className = 'block w-full mt-2 text-center text-sm text-blue-600 font-semibold underline underline-offset-2 hover:text-blue-800 transition-colors';
                         viewBtn.innerHTML = '<i class="fa-solid fa-folder-open"></i> View All My Reports';
                         saveBtn.parentNode.insertBefore(viewBtn, saveBtn.nextSibling);
@@ -789,6 +790,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const googleProvider = new GoogleAuthProvider();
 
+    const isReportsPage = window.location.pathname.endsWith("reports.html");
+    if (isReportsPage) {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          sessionStorage.setItem("rentguard_logged_in", "true");
+          return;
+        }
+
+        if (sessionStorage.getItem("rentguard_logged_in") !== "true") {
+          window.location.replace("login.html?redirect=reports.html");
+        }
+      });
+    }
+
 
     
     function showAlert(message, type) {
@@ -822,7 +837,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   
     function goToDashboard() {
-      window.location.href = "reports.html";
+      sessionStorage.setItem("rentguard_logged_in", "true");
+
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+      window.location.href = redirect === "reports.html" ? redirect : "reports.html";
     }
 
     function getFirebaseErrorMessage(code) {
