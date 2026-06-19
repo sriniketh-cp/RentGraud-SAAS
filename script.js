@@ -853,10 +853,15 @@ document.addEventListener('DOMContentLoaded', () => {
         "auth/email-already-in-use":   "An account with this email already exists.",
         "auth/weak-password":          "Password must be at least 6 characters.",
         "auth/too-many-requests":      "Too many attempts. Please wait a moment and try again.",
+        "auth/operation-not-allowed":  "Google sign-in is not enabled for this Firebase project.",
+        "auth/unauthorized-domain":    "This website domain is not allowed in Firebase Authentication.",
+        "auth/popup-blocked":          "The Google sign-in popup was blocked. Please allow popups and try again.",
         "auth/popup-closed-by-user":   "Google sign-in was cancelled.",
+        "auth/cancelled-popup-request": "Another Google sign-in popup is already open.",
+        "auth/account-exists-with-different-credential": "An account already exists with this email using a different sign-in method.",
         "auth/network-request-failed": "Network error. Check your internet connection.",
       };
-      return messages[code] || "Something went wrong. Please try again.";
+      return messages[code] || `Something went wrong (${code || "unknown error"}). Please try again.`;
     }
 
 
@@ -945,6 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
         goToDashboard();
 
       } catch (error) {
+        console.error("Google sign-in failed:", error);
         showAlert(getFirebaseErrorMessage(error.code), "error");
       }
     };
