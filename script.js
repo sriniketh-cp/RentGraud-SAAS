@@ -31,6 +31,22 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = "login.html";
     });
 
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', () => {
+            const targetId = button.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            if (input) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    button.textContent = '🙈';
+                } else {
+                    input.type = 'password';
+                    button.textContent = '👁️';
+                }
+            }
+        });
+    });
+
     const cameraOverlay = document.getElementById('camera_overlay');
     const closeCameraBtn = document.getElementById('close_camera_btn');
 
@@ -43,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cameraOverlay) cameraOverlay.style.display = 'none';
         document.body.style.overflow = '';
     }
-
 
     const inspectionBtns = document.querySelectorAll('.inspection_button');
     inspectionBtns.forEach(inspectionBtn => {
@@ -65,11 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-
     if (closeCameraBtn) {
         closeCameraBtn.addEventListener('click', closeCamera);
     }
-
 
     const captureBtn = document.getElementById('capture_button');
     if (captureBtn) {
@@ -958,10 +971,11 @@ document.addEventListener('DOMContentLoaded', () => {
   
   
    
-    function switchTab(tabName) {
+    window.switchTab = function(tabName) {
     
       document.querySelectorAll(".tab-content").forEach(panel => {
-        panel.classList.remove("active");
+        panel.classList.remove("block", "animate-fade-in");
+        panel.classList.add("hidden");
       });
 
     
@@ -971,7 +985,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
      
-      document.getElementById("content-" + tabName).classList.add("active");
+      const targetPanel = document.getElementById("content-" + tabName);
+      targetPanel.classList.remove("hidden");
+      targetPanel.classList.add("block", "animate-fade-in");
 
      
       const activeBtn = document.getElementById("tab-" + tabName);
