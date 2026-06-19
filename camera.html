@@ -98,7 +98,7 @@
     </div>
 
     
-    <div class="bg-white border-t border-gray-200 px-4 py-4 shrink-0">
+    <form id="inspection_form" class="bg-white border-t border-gray-200 px-4 py-4 shrink-0">
         <label for="damageNotes" class="block text-sm font-bold text-gray-700 mb-1.5">
             Damage Description
         </label>
@@ -106,24 +106,29 @@
             <textarea
                 id="damageNotes"
                 rows="2"
+                required
+                minlength="5"
                 class="w-full border border-gray-300 rounded-lg p-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-sm resize-none"
                 placeholder="type to describe the damage..."
             ></textarea>
             <button id="micBtn"
+                type="button"
                 class="absolute bottom-3 right-3 p-1.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-base"
                 title="Voice dictation"><i class="fa-solid fa-microphone"></i></button>
         </div>
         <p id="micStatus" class="text-xs text-red-500 font-bold mb-3 hidden animate-pulse"><i class="fa-solid fa-circle text-red-500"></i> Listening... Speak now.</p>
 
         <button id="save_photo_button"
+            type="submit"
             class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all">
             <i class="fa-solid fa-location-dot"></i> Save Annotated Photo + Location + Notes
         </button>
         <button id="shareBtn"
+            type="button"
             class="hidden w-full mt-3 border-2 border-blue-600 text-blue-600 bg-white py-3 rounded-xl font-bold shadow hover:bg-blue-50 active:scale-95 transition-all">
             <i class="fa-solid fa-share-nodes"></i> Share with Landlord
         </button>
-    </div>
+    </form>
 
 </body>
 </html>
